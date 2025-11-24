@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-
   res.setHeader("Access-Control-Allow-Origin", "*");
 
   const { rc } = req.query;
@@ -18,17 +17,28 @@ export default async function handler(req, res) {
       `https://vehicle-api-isuzu3-8895-nexusxnikhils-projects.vercel.app/api/vehicle?apikey=${apiKey}&vehical=${rc}`;
 
     const response = await fetch(url);
-    const data = await response.json();
+    const raw = await response.json();
 
-    // REMOVE "credit" FROM API
-    if (data?.result?.credit) {
-      delete data.result.credit;
+    // 🧹 CLEANING LOGIC: DELETE ANY credit/cached key anywhere
+
+    function deepClean(obj) {
+      if (typeof obj !== "object" || obj === null) return obj;
+
+      for (const key in obj) {
+        if (key.toLowerCase() === "credit") delete obj[key];
+        if (key.toLowerCase() === "cached") delete obj[key];
+        else obj[key] = deepClean(obj[key]); // recursive clean
+      }
+      return obj;
     }
 
-    let cleaned = {
+    const cleanedData = deepClean(raw);
+
+    // FINAL OUTPUT FORMAT
+    const cleaned = {
       error: false,
       rc: rc.toUpperCase(),
-      result: data.result || data.data || data,
+      result: cleanedData.result || cleanedData.data || cleanedData,
       source_by: "@OsintUchihaProBot"
     };
 
