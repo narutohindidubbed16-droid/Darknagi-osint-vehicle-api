@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+
   res.setHeader("Access-Control-Allow-Origin", "*");
 
   const { rc } = req.query;
@@ -19,12 +20,19 @@ export default async function handler(req, res) {
     const response = await fetch(url);
     const data = await response.json();
 
-    return res.status(200).json({
+    // REMOVE "credit" FROM API
+    if (data?.result?.credit) {
+      delete data.result.credit;
+    }
+
+    let cleaned = {
       error: false,
       rc: rc.toUpperCase(),
-      result: data,
+      result: data.result || data.data || data,
       source_by: "@OsintUchihaProBot"
-    });
+    };
+
+    return res.status(200).json(cleaned);
 
   } catch (e) {
     return res.status(500).json({
